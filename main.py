@@ -6,7 +6,7 @@ import time
 
 from aiogram import Bot, Dispatcher
 from aiogram.types import Message
-from aiogram.filters import CommandStart
+from aiogram.filters import CommandStart, Command
 from dotenv import load_dotenv
 import websockets
 
@@ -41,8 +41,15 @@ async def get_user_id(message: Message):
 
 @dp.message(CommandStart())
 async def get_start(message: Message):
-    user_id =  message.from_user.id
-    await message.answer(f"{user_id=}")
+    user_id = message.from_user.id
+    name = message.from_user.full_name
+    await message.answer(f"Hello, {name}")
+    
+    
+@dp.message(Command("help"))
+async def handle_help(message: Message):
+    text = "You can see here actual BTC and ETH price!"
+    await message.answer(text=text)
     
 
 async def fetch_binance_trades(url: str):
