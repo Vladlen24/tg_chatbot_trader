@@ -17,8 +17,6 @@ if os.path.exists(dotenv_path):
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 USER_ID = os.getenv("USER_ID")
 
-last_send_time = 0
-
 bot = Bot(
     token=BOT_TOKEN
 )
@@ -30,6 +28,11 @@ binance_multisteram_url = "wss://fstream.binance.com/stream?streams=btcusdt@aggT
 
 btcstream = 'btcusdt@aggTrade'
 ethstream = 'ethusdt@aggTrade'
+
+last_send_time = 0
+is_eth_received = False
+is_btc_received = False
+
 
 async def get_user_id(message: Message):
     user_id = message.from_user.id
@@ -44,6 +47,8 @@ async def get_start(message: Message):
 
 async def fetch_binance_trades(url: str):
     global last_send_time
+    global is_eth_received
+    global is_btc_received
     async with websockets.connect(url) as ws:
         async for msg in ws:
             msg_dict = json.loads(msg)
@@ -51,14 +56,20 @@ async def fetch_binance_trades(url: str):
             stream = msg_dict["stream"]
             price = data["p"]
             if stream == ethstream:
-                msg_2_bot = f"Current price ETC/USDT: {price}"
+                msg_eth = f"Current price ETH/USDT: {price}"
+                is_eth_received = True
             elif stream == btcstream:
-                msg_2_bot = f"Current price BTC/USDT: {price}"
-            if time.time() - last_send_time > 5:
-                await send_message_to_tg(
-                    msg=msg_2_bot
-                )
-                last_send_time = time.time()
+                msg_btc = f"Current price BTC/USDT: {price}"
+                is_btc_received = True
+            if is_eth_received and is_btc_received:
+                if time.time() - last_send_time > 5:
+                    await send_message_to_tg(
+                        msg=msg_eth+'\n'+msg_btc
+                    )
+                    is_eth_received = False
+                    is_btc_received = False
+                    last_send_time = time.time()
+                    
             
             
 async def send_message_to_tg(msg: str):
